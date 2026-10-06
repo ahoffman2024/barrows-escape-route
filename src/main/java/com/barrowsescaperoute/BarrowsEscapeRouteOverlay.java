@@ -8,9 +8,7 @@ import java.awt.Polygon;
 import java.util.List;
 import javax.inject.Inject;
 import net.runelite.api.Client;
-import net.runelite.api.GameObject;
 import net.runelite.api.Perspective;
-import net.runelite.api.TileObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
@@ -38,9 +36,6 @@ class BarrowsEscapeRouteOverlay extends Overlay
 	{
 		if (!plugin.isMazeActive()) { return null; }
 		if (config.showRoute()) { renderRoute(graphics, routeForCurrentPhase()); }
-		if (config.showExitLadder()) { renderPoint(graphics, plugin.toCurrentLocal(plugin.getEntryAnchor(), null), "Exit ladder"); }
-		if (config.showRoute()) { renderObject(graphics, plugin.getChest(), "Chest"); }
-		if (config.showDoor()) { renderObject(graphics, plugin.getNextDoor(), plugin.isChestOpened() ? "Return route" : "Open door"); }
 		return null;
 	}
 	private List<LocalPoint> routeForCurrentPhase()
@@ -85,60 +80,4 @@ class BarrowsEscapeRouteOverlay extends Overlay
 		}
 	}
 
-	private void renderObject(Graphics2D graphics, TileObject object, String label)
-	{
-		if (object == null) { return; }
-		LocalPoint localLocation = object.getLocalLocation();
-		if (localLocation == null) { return; }
-		java.awt.Shape polygon;
-		try
-		{
-			// Scene objects can be disposed between a game tick and an overlay
-			// frame while an instance template is being swapped.
-			polygon = object.getClickbox();
-		}
-		catch (RuntimeException ignored)
-		{
-			// Some instanced ladder models have no stable 3D clickbox.  The tile
-			// polygon is still valid and provides a reliable visible fallback.
-			polygon = null;
-		}
-		if (polygon == null)
-		{
-			try
-			{
-				// TileObject owns the correct instanced WorldView.  The legacy
-				// client-level projection can put a dynamic-map tile in another
-				// template chunk.
-				polygon = object.getCanvasTilePoly();
-			}
-			catch (RuntimeException ignored)
-			{
-				return;
-			}
-		}
-		if (polygon == null) { return; }
-		graphics.setColor(config.routeColor());
-		graphics.setStroke(new BasicStroke(2f));
-		graphics.draw(polygon);
-		graphics.drawString(label, polygon.getBounds().x, polygon.getBounds().y - 4);
-	}
-	private void renderPoint(Graphics2D graphics, LocalPoint point, String label)
-	{
-		if (point == null) { return; }
-		Polygon polygon;
-		try
-		{
-			polygon = Perspective.getCanvasTilePoly(client, point);
-		}
-		catch (RuntimeException ignored)
-		{
-			return;
-		}
-		if (polygon == null) { return; }
-		graphics.setColor(config.routeColor());
-		graphics.setStroke(new BasicStroke(2f));
-		graphics.draw(polygon);
-		graphics.drawString(label, polygon.getBounds().x, polygon.getBounds().y - 4);
-	}
 }
